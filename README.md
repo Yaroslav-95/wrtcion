@@ -27,7 +27,7 @@ In the first instance's "chat" window, enter:
 /call localhost:8002
 ```
 
-The audio should play from the second instance using gstreamer.
+The audio should be saved to `resources/results/`
 
 ## Problems
 
