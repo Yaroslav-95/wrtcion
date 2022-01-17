@@ -16,7 +16,7 @@ import (
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
 	"github.com/pion/webrtc/v3/pkg/media/oggreader"
-	"github.com/Yaroslav-95/wrtcion/gst"
+	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
 )
 
 const (
@@ -428,6 +428,8 @@ func (conn *Connection) getAudio() error {
 	if err != nil {
 		return err
 	}
+	fname := fmt.Sprintf("%s/%s.opus", outputPath, conn)
+	file, err := oggwriter.New(fname, 48000, 2)
 	if err != nil {
 		return err
 	}
@@ -457,28 +459,10 @@ func (conn *Connection) getAudio() error {
 			}
 		}()
 
-		codecName := strings.Split(
-			track.Codec().RTPCodecCapability.MimeType,
-			"/",
-		)[1]
-		pipeline := gst.CreatePipeline(
-			track.PayloadType(),
-			strings.ToLower(codecName),
-		)
-		pipeline.Start()
-		defer pipeline.Stop()
-		buf := make([]byte, 1500)
-		for conn.state == InCall {
-			i, _, err := track.Read(buf)
-			if err == io.EOF {
-				log.Println("end of track")
-				return
-			} else if err != nil {
-				log.Println("track read error:", err)
-				conn.Close()
-				return
-			}
-			pipeline.Push(buf[:i])
+		log.Println("writing track to", fname)
+		codec := track.Codec()
+		if strings.EqualFold(codec.MimeType, webrtc.MimeTypeOpus) {
+			conn.saveToDisk(file, track)
 		}
 	})
 
