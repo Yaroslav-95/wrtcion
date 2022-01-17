@@ -141,8 +141,20 @@ func newConnection(
 		pendingCandidates: make([]*webrtc.ICECandidate, 0),
 	}
 
-	var err error
-	conn.peer, err = webrtc.NewPeerConnection(rtcConf)
+	m := new(webrtc.MediaEngine)
+	err := m.RegisterDefaultCodecs()
+	if err != nil {
+		return nil, err
+	}
+
+	s := webrtc.SettingEngine{
+		LoggerFactory: rtcLoggerFactory{},
+	}
+	api := webrtc.NewAPI(
+		webrtc.WithMediaEngine(m),
+		webrtc.WithSettingEngine(s),
+	)
+	conn.peer, err = api.NewPeerConnection(rtcConf)
 	if err != nil {
 		return nil, err
 	}
